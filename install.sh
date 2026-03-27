@@ -19,7 +19,8 @@ fi
 
 echo "claudeman will be installed to: $INSTALL_DIR/$BINARY"
 echo ""
-read -p "Continue? [y/N] " confirm < /dev/tty
+echo -n "Continue? [y/N] " > /dev/tty
+read confirm < /dev/tty
 if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
     echo "Aborted."
     exit 0
