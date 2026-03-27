@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-REPO="huangqianrui/claudeman"
+REPO="and2352000/claudeman"
 INSTALL_DIR="/usr/local/bin"
 BINARY="claudeman"
 

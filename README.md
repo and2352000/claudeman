@@ -5,12 +5,16 @@ A simple CLI tool to manage multiple [Claude Code](https://claude.ai/code) profi
 ## Requirements
 
 - macOS / Linux
-- `jq` (`brew install jq`)
+- `jq`
+  - macOS: `brew install jq`
+  - Ubuntu / Debian: `sudo apt install jq`
+  - Fedora / RHEL: `sudo dnf install jq`
+  - Arch: `sudo pacman -S jq`
 
 ## Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/huangqianrui/claudeman/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/and2352000/claudeman/main/install.sh | bash
 ```
 
 After installation, add the following snippet to your `~/.zshrc` or `~/.bashrc`:
@@ -28,12 +32,6 @@ claudeman() {
 }
 
 refresh-claude
-```
-
-Then reload your shell:
-
-```bash
-source ~/.zshrc
 ```
 
 ## Usage
