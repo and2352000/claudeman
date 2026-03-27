@@ -5,21 +5,6 @@ REPO="huangqianrui/claudeman"
 INSTALL_DIR="/usr/local/bin"
 BINARY="claudeman"
 
-SHELL_SNIPPET='
-# claudeman - Claude Code profile manager
-refresh-claude() { eval "$(command claudeman env)"; }
-
-claudeman() {
-    if [ "$1" = "sw" ]; then
-        eval "$(command claudeman sw "${@:2}")"
-    else
-        command claudeman "$@"
-    fi
-}
-
-refresh-claude
-'
-
 # Check for jq dependency
 if ! command -v jq &> /dev/null; then
     echo "⚠️  jq is required but not installed."
@@ -36,6 +21,8 @@ fi
 if [ ! -w "$INSTALL_DIR" ]; then
     INSTALL_DIR="$HOME/.local/bin"
     mkdir -p "$INSTALL_DIR"
+    echo "⚠️  /usr/local/bin is not writable, installing to $INSTALL_DIR instead."
+    echo "    Make sure $INSTALL_DIR is in your PATH."
 fi
 
 echo "Installing claudeman to $INSTALL_DIR..."
@@ -44,31 +31,31 @@ curl -fsSL "https://raw.githubusercontent.com/$REPO/main/claudeman" \
     -o "$INSTALL_DIR/$BINARY"
 chmod +x "$INSTALL_DIR/$BINARY"
 
-# Check if install dir is in PATH
-if ! echo "$PATH" | grep -q "$INSTALL_DIR"; then
-    echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$RC_FILE"
-fi
-
-# Detect shell rc file
-if [ -n "$ZSH_VERSION" ] || [ "$(basename "$SHELL")" = "zsh" ]; then
-    RC_FILE="$HOME/.zshrc"
-else
-    RC_FILE="$HOME/.bashrc"
-fi
-
-# Add shell snippet if not already present
-if grep -q "claudeman env" "$RC_FILE" 2>/dev/null; then
-    echo "✅ Shell config already set up in $RC_FILE"
-else
-    echo "$SHELL_SNIPPET" >> "$RC_FILE"
-    echo "✅ Shell config added to $RC_FILE"
-fi
-
 echo ""
-echo "✅ claudeman installed successfully!"
+echo "✅ claudeman installed to $INSTALL_DIR/$BINARY"
 echo ""
-echo "Reload your shell or run:"
-echo "  source $RC_FILE"
+echo "────────────────────────────────────────────────"
+echo "Add the following to your ~/.zshrc or ~/.bashrc:"
+echo "────────────────────────────────────────────────"
+cat << 'EOF'
+
+# claudeman - Claude Code profile manager
+refresh-claude() { eval "$(command claudeman env)"; }
+
+claudeman() {
+    if [ "$1" = "sw" ]; then
+        eval "$(command claudeman sw "${@:2}")"
+    else
+        command claudeman "$@"
+    fi
+}
+
+refresh-claude
+EOF
+echo "────────────────────────────────────────────────"
 echo ""
-echo "Then get started:"
+echo "Then reload your shell:"
+echo "  source ~/.zshrc"
+echo ""
+echo "Get started:"
 echo "  claudeman init"
