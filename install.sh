@@ -17,16 +17,7 @@ if [ ! -w "$INSTALL_DIR" ]; then
     mkdir -p "$INSTALL_DIR"
 fi
 
-echo "claudeman will be installed to: $INSTALL_DIR/$BINARY"
-echo ""
-echo -n "Continue? [y/N] " > /dev/tty
-read confirm < /dev/tty
-if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-    echo "Aborted."
-    exit 0
-fi
-echo ""
-echo "Installing..."
+echo "Installing claudeman to $INSTALL_DIR/$BINARY ..."
 
 curl -fsSL "https://raw.githubusercontent.com/$REPO/main/claudeman" \
     -o "$INSTALL_DIR/$BINARY"
