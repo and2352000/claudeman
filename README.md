@@ -77,6 +77,20 @@ claudeman sw personal
 
 This updates `CLAUDE_CONFIG_DIR` in your current shell session immediately (via the shell wrapper).
 
+## Uninstall
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/and2352000/claudeman/main/uninstall.sh | bash
+```
+
+This removes the `claudeman` binary. To also remove all profiles and config:
+
+```bash
+rm -rf ~/.claudeman
+```
+
+Remember to remove the claudeman snippet from your `~/.zshrc` or `~/.bashrc`.
+
 ## How it works
 
 Each profile maps to a directory that Claude Code uses as its config root (`CLAUDE_CONFIG_DIR`). Switching profiles changes where Claude reads its settings, memory, and MCP configs from — letting you maintain completely separate environments.
