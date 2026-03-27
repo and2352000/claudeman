@@ -1,0 +1,121 @@
+#!/bin/bash
+# claudeman - Claude Code profile manager
+
+CLAUDEMAN_DIR="$HOME/.claudeman"
+RC_FILE="$CLAUDEMAN_DIR/config.json"
+
+# Check for jq
+if ! command -v jq &> /dev/null; then
+    echo "Error: jq is required. Run: brew install jq"
+    exit 1
+fi
+
+# Internal: add profile logic
+add_profile() {
+    local name=$1
+    local path=$2
+    local desc=$3
+
+    if [ -z "$name" ]; then
+        read -p "Profile name (e.g. work): " name
+        read -p "Config path (default ~/.claudeman/$name): " path
+        path=${path:-"$CLAUDEMAN_DIR/$name"}
+        read -p "Description: " desc
+    fi
+
+    # Check for duplicate name
+    if [ -f "$RC_FILE" ]; then
+        local exists=$(jq -r --arg NAME "$name" '.profiles[] | select(.name == $NAME) | .name' "$RC_FILE")
+        if [ -n "$exists" ]; then
+            echo "❌ Error: profile '$name' already exists." >&2
+            return 1
+        fi
+    fi
+
+    tmp=$(mktemp)
+    jq --arg NAME "$name" \
+       --arg PATH "$path" \
+       --arg DESC "$desc" \
+       '.profiles += [{"name": $NAME, "path": $PATH, "desc": $DESC}] | .current = $NAME' \
+       "$RC_FILE" > "$tmp" && mv "$tmp" "$RC_FILE"
+
+    echo "✅ Profile '$name' added and set as current ($path)"
+}
+
+case "$1" in
+    "init")
+        if [ -f "$RC_FILE" ]; then
+            echo "✅ Config already exists at $RC_FILE. Nothing to do."
+            exit 0
+        fi
+        mkdir -p "$CLAUDEMAN_DIR"
+        echo '{"current": null, "profiles": []}' > "$RC_FILE"
+        echo "✨ Created ~/.claudeman/. Set up your first profile:"
+        add_profile
+        echo "Done."
+        ;;
+
+    "add")
+        if [ ! -f "$RC_FILE" ]; then
+            echo "Run 'claudeman init' first."
+            exit 1
+        fi
+        add_profile
+        ;;
+
+    "list")
+        if [ ! -f "$RC_FILE" ]; then
+            echo "Run 'claudeman init' first."
+            exit 1
+        fi
+        current=$(jq -r '.current' "$RC_FILE")
+        echo "┌─ Claude Profiles ───────────────────"
+        jq -r --arg CUR "$current" '
+          .profiles[] |
+          if .name == $CUR then
+            "│ Name: \(.name)  ✦\n│ Desc: \(.desc)\n│ Path: \(.path)"
+          else
+            "│ Name: \(.name)\n│ Desc: \(.desc)\n│ Path: \(.path)"
+          end
+        ' "$RC_FILE" | awk 'NR>1 && /^│ Name:/ {print "├─────────────────────────────────────"} {print}'
+        echo "└─────────────────────────────────────"
+        echo -e "Current: \033[1;32m$current\033[0m"
+        ;;
+
+    "sw")
+        if [ -z "$2" ]; then
+            echo "Usage: claudeman sw <name>" >&2
+            exit 1
+        fi
+        exists=$(jq -r --arg NAME "$2" '.profiles[] | select(.name == $NAME) | .name' "$RC_FILE")
+        if [ -z "$exists" ]; then
+            echo "❌ Error: profile '$2' not found." >&2
+            exit 1
+        fi
+        tmp=$(mktemp)
+        jq --arg NAME "$2" '.current = $NAME' "$RC_FILE" > "$tmp" && mv "$tmp" "$RC_FILE"
+        echo "✅ Switched to: $2" >&2
+        raw_path=$(jq -r --arg NAME "$2" '.profiles[] | select(.name == $NAME) | .path' "$RC_FILE")
+        echo "export CLAUDE_CONFIG_DIR=\"${raw_path/#\~/$HOME}\""
+        ;;
+
+    "env")
+        # Output export command for current profile (used by eval in shell wrapper)
+        if [ ! -f "$RC_FILE" ]; then
+            exit 0
+        fi
+        raw_path=$(jq -r '.current as $c | .profiles[] | select(.name == $c) | .path' "$RC_FILE")
+        if [ "$raw_path" != "null" ] && [ -n "$raw_path" ]; then
+            echo "export CLAUDE_CONFIG_DIR=\"${raw_path/#\~/$HOME}\""
+        fi
+        ;;
+
+    *)
+        echo "Usage:"
+        echo "  claudeman init    - Initialize config and create first profile"
+        echo "  claudeman add     - Add a new profile"
+        echo "  claudeman list    - List all profiles"
+        echo "  claudeman sw      - Switch profile"
+        echo "  claudeman env     - Output export command for current profile"
+        ;;
+esac
